@@ -58,6 +58,5 @@ export const ogmaModuleOptions: OgmaModuleOptions = {
 /* Options for the Apollo Server */
 export const GraphQLOptions: GqlModuleOptions = {
   installSubscriptionHandlers: true,
-  autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-  debug: isDevEnv,
+  autoSchemaFile: "schema.gql",
 };
