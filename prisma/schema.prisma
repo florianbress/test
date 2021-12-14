@@ -1,0 +1,426 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RoleType {
+  Owner
+  Admin
+  Staff
+  Redaktion
+  Developer
+  Streamer
+  User
+  Banned
+  Gast
+}
+
+enum TeamRole {
+  Owner
+  Leader
+  CoLeader
+  Member
+}
+
+enum OrganizationRole {
+  Owner
+  Manager
+  Member
+}
+
+model OldUser {
+  uuid     String @id
+  username String @unique
+  email    String @unique
+  pinCode  Int?
+}
+
+model User {
+  uuid                   String                   @id
+  username               String                   @unique
+  firstName              String?
+  lastName               String?
+  email                  String                   @unique
+  password               String
+  epicId                 String?                  @unique
+  image                  String?
+  identifier             String                   @unique
+  pinCode                Int?
+  role                   RoleType?                @default(User)
+  validatedFlag          Boolean?                 @default(false)
+  passwordResetFlag      Boolean?                 @default(false)
+  updatedAt              DateTime                 @updatedAt
+  createdAt              DateTime                 @default(now())
+  IsTeamOwnerFrom        Team[]                   @relation("TeamOwner")
+  IsTeamLeaderFrom       Team?                    @relation("TeamLeader")
+  IsTeamCoLeaderFrom     Team?                    @relation("TeamCoLeader")
+  IsOrgOwnerFrom         Organization?            @relation("OrganizationOwner")
+  TeamMembership         TeamMembership[]
+  RosterMembership       RosterMembership[]
+  RosterLogEntryCreated  RosterLogEntry[]         @relation("RosterLogEntryCreatedBy")
+  RosterLogEntryTarget   RosterLogEntry[]         @relation("RosterLogEntryTargetUser")
+  MatchLogEntryCreated   MatchLogEntry[]          @relation("MatchLogEntryCreatedBy")
+  MatchLogEntryTarget    MatchLogEntry[]          @relation("MatchLogEntryTargetUser")
+  OrganizationMembership OrganizationMembership[]
+  OrganizationInvitation OrganizationInvitation[]
+  DeletedUser            DeletedUser[]
+  Chat                   MatchChatEntry[]
+}
+
+model UserLocked {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  userId    String
+  duration  Int
+  reason    String
+}
+
+enum LoginResult {
+  Rejected
+  Unknown
+  Granted
+  Unauthorized
+}
+
+model LoginRequest {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  identifier String?
+  userId     String
+  ip         String
+  result     LoginResult
+}
+
+model LoginValidation {
+  id         Int      @id @default(autoincrement())
+  pinCode    Int
+  createdAt  DateTime @default(now())
+  identifier String
+  isValid    Boolean  @default(true)
+  userId     String
+}
+
+model PinValidationFail {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  count     Int
+  userId    String   @unique
+}
+
+model NewsLetter {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  email     String
+}
+
+model DeletedUser {
+  uuid     String @id
+  username String
+  userId   String
+  User     User   @relation(fields: [userId], references: [uuid])
+}
+
+model ChangePasswordValidation {
+  id        Int      @id @default(autoincrement())
+  pinCode   Int
+  createdAt DateTime @default(now())
+  isValid   Boolean  @default(true)
+  ip        String
+  userId    String
+}
+
+model ForgotPasswordValidation {
+  id        Int      @id @default(autoincrement())
+  pinCode   Int
+  createdAt DateTime @default(now())
+  isValid   Boolean  @default(true)
+  ip        String
+  userId    String
+}
+
+model TermsOfService {
+  id                   Int                    @id @default(autoincrement())
+  createdAt            DateTime               @default(now())
+  body                 String
+  TermsOfServiceStatus TermsOfServiceStatus[]
+}
+
+model TermsOfServiceStatus {
+  id               Int            @id @default(autoincrement())
+  userId           String
+  acceptedAt       DateTime       @default(now())
+  termsOfServiceId Int
+  TermsOfService   TermsOfService @relation(fields: [termsOfServiceId], references: [id])
+}
+
+model TermsOfUse {
+  id               Int                @id @default(autoincrement())
+  createdAt        DateTime           @default(now())
+  body             String
+  TermsOfUseStatus TermsOfUseStatus[]
+}
+
+model TermsOfUseStatus {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  acceptedAt   DateTime @default(now())
+  termsOfUseId Int
+
+  TermsOfUse TermsOfUse @relation(fields: [termsOfUseId], references: [id])
+}
+
+model DataProtection {
+  id                   Int                    @id @default(autoincrement())
+  createdAt            DateTime               @default(now())
+  body                 String
+  DataProtectionStatus DataProtectionStatus[]
+}
+
+model DataProtectionStatus {
+  id               Int            @id @default(autoincrement())
+  userId           String
+  dataProtectionId Int
+  acceptedAt       DateTime       @default(now())
+  DataProtection   DataProtection @relation(fields: [dataProtectionId], references: [id])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String
+  image     String
+  username  String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  uuid                   String                   @id
+  name                   String                   @unique
+  tag                    String
+  description            String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  ownerId                String                   @unique
+  Admin                  User                     @relation("OrganizationOwner", fields: [ownerId], references: [uuid])
+  OrganizationMembership OrganizationMembership[]
+  OrganizationInvitation OrganizationInvitation[]
+  Teams                  Team[]
+}
+
+model OrganizationMembership {
+  id             Int              @id @default(autoincrement())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  organizationId String           @unique
+  userId         String           @unique
+  role           OrganizationRole @default(Member)
+  Organization   Organization     @relation(fields: [organizationId], references: [uuid])
+  User           User             @relation(fields: [userId], references: [uuid])
+}
+
+model OrganizationInvitation {
+  id             Int          @id @default(autoincrement())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  userId         String       @unique
+  Organization   Organization @relation(fields: [organizationId], references: [uuid])
+  User           User         @relation(fields: [userId], references: [uuid])
+}
+
+model Team {
+  uuid               String               @id
+  name               String?              @unique
+  image              String?
+  tag                String?
+  identifier         String               @unique
+  description        String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  ownerId            String?
+  leaderId           String?              @unique
+  coleaderId         String?              @unique
+  divisionId         Int?
+  divisionGroupId    Int?
+  organizationId     String?
+  Admin              User?                @relation("TeamOwner", fields: [ownerId], references: [uuid])
+  Leader             User?                @relation("TeamLeader", fields: [leaderId], references: [uuid])
+  Coleader           User?                @relation("TeamCoLeader", fields: [coleaderId], references: [uuid])
+  TeamMembership     TeamMembership[]
+  TeamInvitation     TeamInviteCode[]
+  Roster             Roster[]
+  SeasonRegistration SeasonRegistration[]
+  Division           Division?            @relation(fields: [divisionId], references: [id])
+  DivisionGroup      DivisionGroup?       @relation(fields: [divisionGroupId], references: [id])
+  Organization       Organization?        @relation(fields: [organizationId], references: [uuid])
+  Home               Match[]              @relation("Home")
+  Away               Match[]              @relation("Away")
+  Winner             Match[]              @relation("Winner")
+  MatchLogEntry      MatchLogEntry[]
+}
+
+model TeamMembership {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  teamId    String
+  userId    String
+  role      TeamRole @default(Member)
+  Team      Team     @relation(fields: [teamId], references: [uuid])
+  User      User     @relation(fields: [userId], references: [uuid])
+}
+
+model TeamInviteCode {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [uuid])
+  code      String   @unique
+}
+
+model Roster {
+  id               Int                @id @default(autoincrement())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  teamId           String
+  divisionGroupId  Int?
+  DivisionGroup    DivisionGroup?     @relation(fields: [divisionGroupId], references: [id])
+  Team             Team               @relation(fields: [teamId], references: [uuid])
+  RosterMembership RosterMembership[]
+  RosterLogEntry   RosterLogEntry[]
+}
+
+model RosterMembership {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rosterId  Int
+  userId    String
+  Roster    Roster   @relation(fields: [rosterId], references: [id])
+  User      User     @relation(fields: [userId], references: [uuid])
+}
+
+model RosterLogEntry {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  type         String
+  extraData    Json?
+  createdById  String
+  targetUserId String?
+  rosterId     Int
+  CreatedBy    User     @relation("RosterLogEntryCreatedBy", fields: [createdById], references: [uuid])
+  TargetUser   User?    @relation("RosterLogEntryTargetUser", fields: [targetUserId], references: [uuid])
+  Roster       Roster   @relation(fields: [rosterId], references: [id])
+}
+
+model Season {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @unique
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  publicationDate    DateTime?
+  registrationStart  DateTime?
+  registrationEnd    DateTime?
+  leagueStart        DateTime?
+  leagueEnd          DateTime?
+  matchWeekLength    Int?                 @default(0)
+  SeasonRegistration SeasonRegistration[]
+  Division           Division[]
+}
+
+model SeasonRegistration {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  seasonId   Int
+  teamId     String
+  isValid    Boolean? @default(false)
+  isCanceled Boolean? @default(false)
+  Season     Season   @relation(fields: [seasonId], references: [id])
+  Team       Team     @relation(fields: [teamId], references: [uuid])
+}
+
+model Division {
+  id             Int             @id @default(autoincrement())
+  name           String        
+  seasonId       Int
+  order          Int?
+  numberOfRounds Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  Season         Season          @relation(fields: [seasonId], references: [id])
+  Team           Team[]
+  DivisionGroup  DivisionGroup[]
+}
+
+model DivisionGroup {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(200)
+  divisionId Int
+  order      Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  Division   Division @relation(fields: [divisionId], references: [id])
+  Roster     Roster[]
+  Match      Match[]
+  Team       Team[]
+}
+
+model Match {
+  id              Int              @id @default(autoincrement())
+  identifier      String?          @unique
+  week            Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  matchDate       DateTime?
+  acceptedByHome  Boolean?         @default(false)
+  acceptedByAway  Boolean?         @default(false)
+  scoreHome       Int?
+  scoreAway       Int?
+  defwin          Boolean?
+  approvedByHome  Boolean          @default(false)
+  approvedByAway  Boolean          @default(false)
+  winnerId        String?
+  divisionGroupId Int
+  rosterHomeId    String
+  rosterAwayId    String
+  DivisionGroup   DivisionGroup    @relation(fields: [divisionGroupId], references: [id])
+  RosterHome      Team             @relation("Home", fields: [rosterHomeId], references: [identifier])
+  RosterAway      Team             @relation("Away", fields: [rosterAwayId], references: [identifier])
+  Winner          Team?            @relation("Winner", fields: [winnerId], references: [uuid])
+  MatchLogEntry   MatchLogEntry[]
+  Chat            MatchChatEntry[]
+}
+
+model MatchLogEntry {
+  id               Int       @id @default(autoincrement())
+  type             String    @db.VarChar(50)
+  extraData        Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  proposeMatchDate DateTime?
+  rosterId         String?
+  createdById      String
+  targetUserId     String?
+  matchId          Int
+  CreatedBy        User      @relation("MatchLogEntryCreatedBy", fields: [createdById], references: [uuid])
+  TargetUser       User?     @relation("MatchLogEntryTargetUser", fields: [targetUserId], references: [uuid])
+  Match            Match     @relation(fields: [matchId], references: [id])
+  Roster           Team?     @relation(fields: [rosterId], references: [uuid])
+}
+
+model MatchChatEntry {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  userId    String
+  matchId   Int
+  Content   String
+  User      User     @relation(fields: [userId], references: [identifier])
+  Match     Match    @relation(fields: [matchId], references: [id])
+}
