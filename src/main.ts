@@ -7,8 +7,9 @@ import { ConfigService } from "./config/config.service";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: false,
+    bufferLogs: true,
   });
+
   const logger = app.get<OgmaService>(OgmaService);
   app.useLogger(logger);
 

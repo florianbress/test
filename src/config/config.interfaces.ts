@@ -1,3 +1,5 @@
+import Joi from "joi";
+
 export interface EnvironmentVariables {
   PORT: number;
   POSTGRES_USER: string;
@@ -13,6 +15,4 @@ export interface EnvironmentVariables {
   MAIL_PASSWORD: string;
   MAIL_HOST: string;
   MAIL_PORT: string;
-  REDIS_HOST: string;
-  REDIS_PORT: number;
 }

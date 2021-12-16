@@ -3,7 +3,7 @@ import { OgmaModuleOptions } from "@ogma/nestjs-module";
 import { ExpressParser } from "@ogma/platform-express";
 import { GraphQLParser } from "@ogma/platform-graphql";
 import { EnvironmentVariables } from "../config/config.interfaces";
-import { schema } from "../config/env-file.schema";
+import { $envVars } from "../config/env-file.schema";
 
 export const isDevEnv = process.env.NODE_ENV === "development";
 
@@ -78,6 +78,8 @@ type SchemaProps = keyof EnvironmentVariables;
 export const getEnv = <T extends SchemaProps = SchemaProps>(
   envKey: T
 ): EnvironmentVariables[T] => {
+  const schema = $envVars[envKey as any];
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const { error, value: sanitizedValue } = schema.validate(process.env[envKey]);
   // This should be always false since the validations using the same schema will
   // happen beforehand.
