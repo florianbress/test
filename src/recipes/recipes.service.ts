@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
+import { ConfigService } from "../config/config.service";
 import { NewRecipeInput } from "./dto/new-recipe.input";
 import { RecipesArgs } from "./dto/recipes.args";
 import { Recipe } from "./models/recipe.model";
@@ -9,7 +10,8 @@ export class RecipesService {
   private readonly recipes: Recipe[] = [];
 
   constructor(
-    @OgmaLogger(RecipesService) private readonly logger: OgmaService
+    @OgmaLogger(RecipesService) private readonly logger: OgmaService,
+    private configService: ConfigService
   ) {}
 
   async create(data: NewRecipeInput): Promise<Recipe> {
@@ -25,6 +27,13 @@ export class RecipesService {
     this.logger.error("Error!");
     this.logger.verbose("Verbose!");
     this.logger.fatal("Fatal!");
+
+    const uuidNameSpace = this.configService.get("app.uuidNameSpace", {
+      infer: true,
+    });
+
+    this.logger.info(uuidNameSpace);
+
     return this.recipes;
   }
 

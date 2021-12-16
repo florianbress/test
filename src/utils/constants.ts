@@ -2,7 +2,8 @@ import { GqlModuleOptions } from "@nestjs/graphql";
 import { OgmaModuleOptions } from "@ogma/nestjs-module";
 import { ExpressParser } from "@ogma/platform-express";
 import { GraphQLParser } from "@ogma/platform-graphql";
-import { join } from "path";
+import { EnvironmentVariables } from "../config/config.interfaces";
+import { schema } from "../config/env-file.schema";
 
 export const isDevEnv = process.env.NODE_ENV === "development";
 
@@ -59,4 +60,30 @@ export const ogmaModuleOptions: OgmaModuleOptions = {
 export const GraphQLOptions: GqlModuleOptions = {
   installSubscriptionHandlers: true,
   autoSchemaFile: "schema.gql",
+};
+
+type SchemaProps = keyof EnvironmentVariables;
+
+/**
+ * Helper to retrive an environment value (living under `process.env`) that was
+ * expect to have. The value itself will be 'parsed' since all env. vars. loaded
+ * from some dot env file are strings. This is an workaround to the limitation
+ * where _config factory_ (from `@nestjs/config` lib) don't have access to the
+ * parsed values that will be configured by `ConfigService` provider due to
+ * this snippet: {@link https://github.com/nestjs/config/blob/2a5a7e10d1098b20b953d66438487264364aa6d9/lib/utils/create-config-factory.util.ts#L7-L16}
+ *
+ * Do notice that since this isn't memoized, every call of `getEnv(x)` leads to
+ * a new validation process, even tho the value was validated already.
+ */
+export const getEnv = <T extends SchemaProps = SchemaProps>(
+  envKey: T
+): EnvironmentVariables[T] => {
+  const { error, value: sanitizedValue } = schema.validate(process.env[envKey]);
+  // This should be always false since the validations using the same schema will
+  // happen beforehand.
+  if (error) {
+    throw error;
+  }
+  // The transformed value
+  return sanitizedValue as EnvironmentVariables[T];
 };
