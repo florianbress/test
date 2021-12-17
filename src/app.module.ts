@@ -6,6 +6,7 @@ import { OgmaInterceptor, OgmaModule } from "@ogma/nestjs-module";
 import applicationConfig from "./config/config/application.config";
 import { envFileSchema } from "./config/env-file.schema";
 import { RecipesModule } from "./recipes/recipes.module";
+import { UsersModule } from "./users/users.module";
 import { GraphQLOptions, ogmaModuleOptions } from "./utils/constants";
 
 @Module({
@@ -20,6 +21,7 @@ import { GraphQLOptions, ogmaModuleOptions } from "./utils/constants";
       ...GraphQLOptions,
       context: ({ req, res }) => ({ req, res }),
     }),
+    UsersModule,
     RecipesModule,
   ],
   providers: [

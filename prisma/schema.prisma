@@ -48,9 +48,12 @@ model User {
   password               String
   epicId                 String?                  @unique
   image                  String?
-  identifier             String                   @unique
-  pinCode                Int?
   role                   RoleType?                @default(User)
+  isVerified             Boolean?                 @default(false)
+  isActive               Boolean?                 @default(false)
+  isLocked               Boolean?                 @default(false)
+  resetPasswordToken     String?
+  resetPasswordExpires   Float?
   validatedFlag          Boolean?                 @default(false)
   passwordResetFlag      Boolean?                 @default(false)
   updatedAt              DateTime                 @updatedAt
@@ -69,6 +72,7 @@ model User {
   OrganizationInvitation OrganizationInvitation[]
   DeletedUser            DeletedUser[]
   Chat                   MatchChatEntry[]
+  Email                  Email[]
 }
 
 model UserLocked {
@@ -348,7 +352,7 @@ model SeasonRegistration {
 
 model Division {
   id             Int             @id @default(autoincrement())
-  name           String        
+  name           String
   seasonId       Int
   order          Int?
   numberOfRounds Int?
@@ -421,6 +425,21 @@ model MatchChatEntry {
   userId    String
   matchId   Int
   Content   String
-  User      User     @relation(fields: [userId], references: [identifier])
+  User      User     @relation(fields: [userId], references: [uuid])
   Match     Match    @relation(fields: [matchId], references: [id])
+}
+
+enum EmailType {
+  VERIFY_EMAIL
+  FORGOT_PASSWORD
+}
+
+model Email {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  type      EmailType
+  isOpened  Boolean?  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  User      User      @relation(fields: [userId], references: [uuid])
 }
