@@ -6,6 +6,7 @@ import { ConfigService } from "../config/config.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { hashPassword } from "../utils/functions";
 import { CreateUserInput } from "./dto/create-user.input";
+import { User } from "./entities/user.entity";
 
 @Injectable()
 export class UsersService {
@@ -20,7 +21,7 @@ export class UsersService {
    * @param createUserInput input the `CreateUserInput` `Argument`, provided as an object (`InputType decorator`), to enable validation
    * @returns a user object or `HttpException`
    */
-  async create(createUserInput: CreateUserInput, req: any) {
+  async create(createUserInput: CreateUserInput, req: any): Promise<User> {
     const lowerCaseUsername = createUserInput.username.toLowerCase();
     const lowerCaseEmail = createUserInput.email.toLowerCase();
     const uuidNameSpace = this.configService.get("app.uuidNameSpace", {
