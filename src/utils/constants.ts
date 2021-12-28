@@ -2,10 +2,68 @@ import { GqlModuleOptions } from "@nestjs/graphql";
 import { OgmaModuleOptions } from "@ogma/nestjs-module";
 import { ExpressParser } from "@ogma/platform-express";
 import { GraphQLParser } from "@ogma/platform-graphql";
-import { EnvironmentVariables } from "../config/config.interfaces";
-import { $envVars } from "../config/env-file.schema";
+import { join } from "path";
+import { EnvironmentVariables } from "../shared/config/config.interfaces";
+import { $envVars } from "../shared/config/env-file.schema";
 
-export const isDevEnv = process.env.NODE_ENV === "development";
+export const cookieName = "connect.sid";
+
+/* Options for the Apollo Server */
+export const GraphQLOptions: GqlModuleOptions = {
+  installSubscriptionHandlers: true,
+  autoSchemaFile: join(process.cwd(), "schema.graphql"),
+  playground: true,
+  debug: true,
+  introspection: true,
+};
+
+export const ogmaModuleOptions: OgmaModuleOptions = {
+  service: {
+    color: true,
+    json: false,
+    application: "Nitroleague",
+  },
+  interceptor: {
+    http: ExpressParser,
+    ws: false,
+    gql: GraphQLParser,
+    rpc: false,
+  },
+};
+
+type SchemaProps = keyof EnvironmentVariables;
+
+/**
+ * Helper to retrive an environment value (living under `process.env`) that was
+ * expect to have. The value itself will be 'parsed' since all env. vars. loaded
+ * from some dot env file are strings. This is an workaround to the limitation
+ * where _config factory_ (from `@nestjs/config` lib) don't have access to the
+ * parsed values that will be configured by `ConfigService` provider due to
+ * this snippet: {@link https://github.com/nestjs/config/blob/2a5a7e10d1098b20b953d66438487264364aa6d9/lib/utils/create-config-factory.util.ts#L7-L16}
+ *
+ * Do notice that since this isn't memoized, every call of `getEnv(x)` leads to
+ * a new validation process, even tho the value was validated already.
+ */
+export const getEnv = <T extends SchemaProps = SchemaProps>(
+  envKey: T
+): EnvironmentVariables[T] => {
+  const schema = $envVars[envKey as any];
+  const { error, value: sanitizedValue } = schema.validate(process.env[envKey]);
+  // This should be always false since the validations using the same schema will
+  // happen beforehand.
+  if (error) {
+    throw error;
+  }
+  // The transformed value
+  return sanitizedValue as EnvironmentVariables[T];
+};
+
+export enum Lengths {
+  password = 5,
+  queryLimit = 10,
+  queryMaxLimit = 25,
+  tagLimit = 3,
+}
 
 export enum ErrorCodes {
   USER_NOT_FOUND = "USER_NOT_FOUND",
@@ -41,51 +99,3 @@ export enum ErrorCodes {
   INVALID_EMAIL = "INVALID_EMAIL",
   CANNOT_CLAIM_ACCOUNT = "CANNOT_CLAIM_ACCOUNT",
 }
-
-export const ogmaModuleOptions: OgmaModuleOptions = {
-  service: {
-    color: true,
-    json: false,
-    application: "Nitroleague",
-  },
-  interceptor: {
-    http: ExpressParser,
-    ws: false,
-    gql: GraphQLParser,
-    rpc: false,
-  },
-};
-
-/* Options for the Apollo Server */
-export const GraphQLOptions: GqlModuleOptions = {
-  installSubscriptionHandlers: true,
-  autoSchemaFile: "schema.gql",
-};
-
-type SchemaProps = keyof EnvironmentVariables;
-
-/**
- * Helper to retrive an environment value (living under `process.env`) that was
- * expect to have. The value itself will be 'parsed' since all env. vars. loaded
- * from some dot env file are strings. This is an workaround to the limitation
- * where _config factory_ (from `@nestjs/config` lib) don't have access to the
- * parsed values that will be configured by `ConfigService` provider due to
- * this snippet: {@link https://github.com/nestjs/config/blob/2a5a7e10d1098b20b953d66438487264364aa6d9/lib/utils/create-config-factory.util.ts#L7-L16}
- *
- * Do notice that since this isn't memoized, every call of `getEnv(x)` leads to
- * a new validation process, even tho the value was validated already.
- */
-export const getEnv = <T extends SchemaProps = SchemaProps>(
-  envKey: T
-): EnvironmentVariables[T] => {
-  const schema = $envVars[envKey as any];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const { error, value: sanitizedValue } = schema.validate(process.env[envKey]);
-  // This should be always false since the validations using the same schema will
-  // happen beforehand.
-  if (error) {
-    throw error;
-  }
-  // The transformed value
-  return sanitizedValue as EnvironmentVariables[T];
-};

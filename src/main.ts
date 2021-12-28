@@ -3,7 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { OgmaService } from "@ogma/nestjs-module";
 import { AppModule } from "./app.module";
-import { ConfigService } from "./config/config.service";
+import { ConfigService } from "./shared/config/config.service";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

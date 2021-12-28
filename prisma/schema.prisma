@@ -7,7 +7,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum RoleType {
+enum UserRole {
   Owner
   Admin
   Staff
@@ -32,29 +32,21 @@ enum OrganizationRole {
   Member
 }
 
-model OldUser {
-  uuid     String @id
-  username String @unique
-  email    String @unique
-  pinCode  Int?
-}
-
 model User {
   uuid                   String                   @id
   username               String                   @unique
   firstName              String?
   lastName               String?
-  email                  String                   @unique
-  password               String
+  local                  Local?
+  epicGames              EpicGames?
   epicId                 String?                  @unique
   image                  String?
-  role                   RoleType?                @default(User)
+  role                   UserRole?                @default(User)
   isVerified             Boolean?                 @default(false)
-  isActive               Boolean?                 @default(false)
+  isActive               Boolean?                 @default(true)
   isLocked               Boolean?                 @default(false)
   resetPasswordToken     String?
   resetPasswordExpires   Float?
-  validatedFlag          Boolean?                 @default(false)
   passwordResetFlag      Boolean?                 @default(false)
   updatedAt              DateTime                 @updatedAt
   createdAt              DateTime                 @default(now())
@@ -73,6 +65,23 @@ model User {
   DeletedUser            DeletedUser[]
   Chat                   MatchChatEntry[]
   Email                  Email[]
+}
+
+model Local {
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  password String
+  userId   String? @unique
+  User     User?   @relation(fields: [userId], references: [uuid])
+}
+
+model EpicGames {
+  id     Int     @id @default(autoincrement())
+  token  String
+  name   String
+  email  String
+  userId String? @unique
+  User   User?   @relation(fields: [userId], references: [uuid])
 }
 
 model UserLocked {
@@ -122,7 +131,7 @@ model NewsLetter {
 }
 
 model DeletedUser {
-  uuid     String @id
+  id       Int    @id @default(autoincrement())
   username String
   userId   String
   User     User   @relation(fields: [userId], references: [uuid])
