@@ -1,13 +1,13 @@
-NODE_ENV=node_env
+NODE_ENV=development
 
 # System Secrets
-PORT = port
+PORT = 4000
 
 # Database Secrets
-POSTGRES_USER = postgres_user
-POSTGRES_PASSWORD = password
-POSTGRES_DB = postgres_db
-DATABASE_URL = postgres_url
+POSTGRES_USER = test
+POSTGRES_PASSWORD = test
+POSTGRES_DB = test-db
+DATABASE_URL = postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}
 
 #JWT Secrets
 JWT_SECRET = jwtsecret
@@ -20,13 +20,13 @@ RESETPASS_TOKEN_SECRET = resetpass_token_secret
 TEST_USER_PASSWORD = test_user_password
 
 # UUID Secrets
-UUID_NAMESPACE = uuid_namespace
+UUID_NAMESPACE = 17a77c4a-c44b-4d68-ae41-f6ca386ae151
 
 # Nodemailer Secrets
 NODEMAILER_HOST = nodemailer_host
-NODEMAILER_PORT = nodemailer_port
+NODEMAILER_PORT = 587
 NODEMAILER_USER = nodemailer_user
 NODEMAILER_PASS = nodemailer_pass
 
 # Bcrypt Secrets
-BCRYPT_SALT = bcrypt_salt
+BCRYPT_SALT = 10
